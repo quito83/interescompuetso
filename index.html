@@ -51,6 +51,26 @@
             <div class="input-wrap"><input id="c-years" type="number" inputmode="numeric" min="1" max="100" step="1" value="30"><span class="suffix">años</span></div>
             <input type="range" data-for="c-years" min="1" max="60" step="1">
           </div>
+          <div class="field">
+            <label>Hitos</label>
+            <div class="seg" id="c-msmode-seg" role="radiogroup" aria-label="Tipo de hitos">
+              <button type="button" role="radio" data-v="fixed">Fijos</button>
+              <button type="button" role="radio" data-v="prop">Proporcionales</button>
+            </div>
+            <input type="hidden" id="c-msmode" value="fixed">
+            <div id="c-scale-wrap" class="sub-field">
+              <select id="c-scale" aria-label="Escala de hitos fijos">
+                <option value="1">100K · 250K · 500K · 1M</option>
+                <option value="auto">Múltiplo automático según resultado</option>
+                <option value="0.1">10K · 25K · 50K · 100K</option>
+                <option value="0.5">50K · 125K · 250K · 500K</option>
+                <option value="2">×2 · 200K … 2M</option>
+                <option value="5">×5 · 500K … 5M</option>
+                <option value="10">×10 · 1M … 10M</option>
+              </select>
+            </div>
+            <p class="hint muted small" id="ms-hint"></p>
+          </div>
           <details class="advanced">
             <summary>Opciones</summary>
             <div class="field">
@@ -58,21 +78,6 @@
               <select id="c-comp">
                 <option value="nominal">Nominal anual, capitaliza mensual</option>
                 <option value="effective">Efectiva anual</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="c-scale">Escala de hitos</label>
-              <select id="c-scale">
-                <option value="auto">Automática</option>
-                <option value="0.1">×0,1 (10K · 25K · 50K · 100K)</option>
-                <option value="0.5">×0,5</option>
-                <option value="1">×1 (100K · 250K · 500K · 1M)</option>
-                <option value="2">×2</option>
-                <option value="3">×3</option>
-                <option value="5">×5</option>
-                <option value="10">×10</option>
-                <option value="20">×20</option>
-                <option value="50">×50</option>
               </select>
             </div>
           </details>

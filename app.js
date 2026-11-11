@@ -115,6 +115,27 @@ function crossingMonth(bal, value) {
    Milestones
    ========================================================= */
 const BASE_MILESTONES = [100e3, 250e3, 500e3, 1e6];
+const PROP_MILESTONES = [0.1, 0.25, 0.5, 1];
+
+/** Value at a fractional month, linearly interpolated. */
+function valueAt(arr, t) {
+  const a = Math.floor(t), b = Math.min(arr.length - 1, a + 1);
+  return arr[a] + (arr[b] - arr[a]) * (t - a);
+}
+
+/** Small "aportes vs intereses" breakdown block. */
+function splitHTML(total, contributed) {
+  const c = Math.max(0, Math.min(total, contributed));
+  const i = total - c;
+  const pc = total > 0 ? (c / total) * 100 : 100;
+  return `<div class="split">
+    <div class="split-bar"><div class="a" style="width:${pc}%"></div><div class="i" style="width:${100 - pc}%"></div></div>
+    <div class="split-legend">
+      <span><span><i style="background:var(--contrib)"></i>Aportes</span><span class="v">${compactShort(c)} <b>${nf1.format(pc)}%</b></span></span>
+      <span><span><i style="background:var(--capital)"></i>Intereses</span><span class="v">${compactShort(i)} <b>${nf1.format(100 - pc)}%</b></span></span>
+    </div>
+  </div>`;
+}
 
 function milestoneScale(finalValue, setting) {
   if (setting !== 'auto') return parseFloat(setting);
@@ -298,13 +319,16 @@ const num = (id) => {
 };
 
 const STORE_KEY = 'ic-inputs-v1';
-const PERSIST_IDS = ['c-initial', 'c-monthly', 'c-rate', 'c-years', 'c-comp', 'c-scale',
+const PERSIST_IDS = ['c-initial', 'c-monthly', 'c-rate', 'c-years', 'c-comp', 'c-scale', 'c-msmode',
   'g-target', 'g-years', 'g-initial', 'g-monthly', 'g-rate'];
 
 function loadState() {
   try {
     const s = JSON.parse(localStorage.getItem(STORE_KEY) || '{}');
     for (const id of PERSIST_IDS) if (s[id] != null) $(id).value = s[id];
+    // Older versions defaulted to the automatic multiple: switch to plain fixed milestones
+    if (s['c-msmode'] == null && s['c-scale'] === 'auto') $('c-scale').value = '1';
+    if (!$('c-scale').value) $('c-scale').value = '1';
   } catch (_) { /* ignore */ }
 }
 function saveState() {
@@ -342,15 +366,29 @@ function renderCalc() {
   $('s-mult').textContent = contributed > 0 ? '×' + nf2.format(final / contributed) : '—';
 
   // Milestones
-  const k = milestoneScale(final, $('c-scale').value);
-  const values = BASE_MILESTONES.map((v) => v * k);
+  const msMode = $('c-msmode').value === 'prop' ? 'prop' : 'fixed';
+  document.querySelectorAll('#c-msmode-seg button').forEach((b) => {
+    const on = b.dataset.v === msMode;
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-checked', on);
+  });
+  $('c-scale-wrap').hidden = msMode === 'prop';
+  const k = msMode === 'fixed' ? milestoneScale(final, $('c-scale').value) : 1;
+  const values = msMode === 'prop'
+    ? PROP_MILESTONES.map((f) => f * final)
+    : BASE_MILESTONES.map((v) => v * k);
+  $('ms-hint').textContent = msMode === 'prop'
+    ? '10% · 25% · 50% · 100% del capital final'
+    : 'Montos fijos' + ($('c-scale').value === 'auto' ? ', multiplicados según el resultado' : '');
   const all = values.map((v) => ({ value: v, month: crossingMonth(sim.bal, v) }));
   const reached = all.filter((m) => m.month !== null);
 
-  $('chart-title').textContent = `Camino a tu primer ${compactShort(values[values.length - 1])}`;
+  $('chart-title').textContent = msMode === 'prop'
+    ? `Camino a ${compact(final)}`
+    : `Camino a tu primer ${compactShort(values[values.length - 1])}`;
   $('chart-sub').textContent =
     `${money(P)} inicial + ${money(pmt)}/mes al ${pct(rate)} anual durante ${years} años` +
-    (k !== 1 ? ` · hitos ×${nf2.format(k)}` : '');
+    (msMode === 'prop' ? ' · hitos proporcionales' : k !== 1 ? ` · hitos ×${nf2.format(k)}` : '');
 
   drawChart($('chart-calc'), {
     months: sim.n,
@@ -359,10 +397,15 @@ function renderCalc() {
       { data: sim.contrib, color: cssVar('--contrib'), width: 2, dash: '5 4' },
     ],
     milestones: reached.filter((m) => m.month > 0),
-    tooltip: (m) => `<b>${monthLabel(m)}</b>
-      <div class="row"><span><i style="background:${cssVar('--capital')}"></i>Capital</span><b>${money(sim.bal[m])}</b></div>
-      <div class="row"><span><i style="background:${cssVar('--contrib')}"></i>Aportado</span><span>${money(sim.contrib[m])}</span></div>
-      <div class="row"><span>Intereses</span><span>${money(sim.bal[m] - sim.contrib[m])}</span></div>`,
+    tooltip: (m) => {
+      const b = sim.bal[m], c = Math.min(b, sim.contrib[m]), i = b - c;
+      const pc = b > 0 ? (c / b) * 100 : 100;
+      return `<b>${monthLabel(m)}</b>
+      <div class="row"><span>Capital</span><b>${money(b)}</b></div>
+      <div class="row"><span><i style="background:${cssVar('--contrib')}"></i>Aportes</span><span>${money(c)}<span class="pct">${nf1.format(pc)}%</span></span></div>
+      <div class="row"><span><i style="background:${cssVar('--capital')}"></i>Intereses</span><span>${money(i)}<span class="pct">${nf1.format(100 - pc)}%</span></span></div>
+      <div class="tbar"><div style="width:${pc}%;background:${cssVar('--contrib')}"></div><div style="width:${100 - pc}%;background:${cssVar('--capital')}"></div></div>`;
+    },
   });
 
   // Time bar
@@ -406,11 +449,13 @@ function renderCalc() {
         <div class="when">No se alcanza en ${years} años</div>
         <div class="delta">Necesitarías ${money(need)}/mes</div>`;
     } else if (m.month === 0) {
-      c.innerHTML = `<div class="amt">${compact(m.value)}</div><div class="when">Ya lo tenés</div><div class="delta">desde el inicio</div>`;
+      c.innerHTML = `<div class="amt">${compact(m.value)}</div><div class="when">Ya lo tenés</div><div class="delta">desde el inicio</div>`
+        + splitHTML(sim.bal[0], sim.contrib[0]);
     } else {
       c.innerHTML = `<div class="amt">${compact(m.value)}</div>
         <div class="when">en ${duration(m.month)}</div>
-        <div class="delta">+${duration(m.month - prevMonth)} desde el hito anterior</div>`;
+        <div class="delta">+${duration(m.month - prevMonth)} desde el hito anterior</div>`
+        + splitHTML(m.value, valueAt(sim.contrib, m.month));
       prevMonth = m.month;
     }
     box.appendChild(c);
@@ -580,6 +625,9 @@ function init() {
   });
   document.querySelectorAll('input[type=range][data-for]').forEach((r) => {
     r.addEventListener('input', () => { $(r.dataset.for).value = r.value; schedule(); });
+  });
+  document.querySelectorAll('#c-msmode-seg button').forEach((b) => {
+    b.addEventListener('click', () => { $('c-msmode').value = b.dataset.v; schedule(); });
   });
   document.querySelectorAll('[data-chips] button').forEach((b) => {
     b.addEventListener('click', () => { $(b.parentElement.dataset.chips).value = b.dataset.v; schedule(); });

@@ -194,7 +194,7 @@ details > summary { list-style-position: inside; }
 .timebar-caption { text-align: center; font-size: .78rem; margin: 6px 0 0; }
 
 /* ---------- Milestones ---------- */
-.milestones { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.milestones { display: grid; grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: 10px; }
 .ms {
   border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; background: var(--surface-2);
   border-left: 4px solid var(--c, var(--accent));
@@ -248,3 +248,28 @@ details > summary { list-style-position: inside; }
 .tooltip i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
 
 .foot { text-align: center; padding: 8px 16px 24px; }
+
+/* ---------- Segmented control ---------- */
+.seg { display: grid; grid-template-columns: 1fr 1fr; background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 3px; gap: 3px; }
+.seg button {
+  border: 0; background: transparent; color: var(--muted); font: inherit; font-weight: 600; font-size: .88rem;
+  padding: 7px 8px; border-radius: 8px; cursor: pointer;
+}
+.seg button.on { background: var(--surface); color: var(--text); box-shadow: var(--shadow); outline: 1px solid var(--border); }
+.sub-field { margin-top: 8px; }
+.sub-field[hidden] { display: none; }
+.hint { margin: 6px 0 0; font-size: .78rem; }
+
+/* ---------- Contribution vs interest split ---------- */
+.split { margin-top: 8px; }
+.split-bar { display: flex; height: 6px; border-radius: 3px; overflow: hidden; background: var(--seg-rest); }
+.split-bar .a { background: var(--contrib); }
+.split-bar .i { background: var(--capital); }
+.split-legend { display: grid; gap: 1px; margin-top: 6px; font-size: .76rem; }
+.split-legend span { display: flex; justify-content: space-between; gap: 8px; }
+.split-legend i { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; }
+.tooltip .pct { opacity: .7; margin-left: 6px; font-weight: 400; }
+.tooltip .tbar { display: flex; height: 5px; border-radius: 3px; overflow: hidden; margin-top: 6px; }
+.split-legend span { align-items: center; white-space: nowrap; }
+.split-legend .v { color: var(--muted); }
+.split-legend .v b { color: var(--text); display: inline-block; min-width: 3.4em; text-align: right; }
