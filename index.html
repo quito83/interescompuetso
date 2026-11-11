@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Interés Compuesto</title>
+  <meta name="description" content="Calculadora de interés compuesto con hitos de capital y comparador de escenarios para llegar a un objetivo.">
+  <meta name="theme-color" content="#0f766e">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <img src="icons/icon.svg" alt="" width="28" height="28">
+      <span>Interés Compuesto</span>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button class="tab active" role="tab" data-tab="calc" aria-selected="true">Calculadora</button>
+      <button class="tab" role="tab" data-tab="goal" aria-selected="false">Objetivo</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- ================= CALCULADORA ================= -->
+    <section id="tab-calc" class="panel active" role="tabpanel">
+      <div class="layout">
+        <aside class="card inputs">
+          <h2>Parámetros</h2>
+          <div class="field">
+            <label for="c-initial">Capital inicial</label>
+            <div class="input-wrap"><span class="prefix">$</span><input id="c-initial" type="number" inputmode="decimal" min="0" step="1000" value="10000"></div>
+            <input type="range" data-for="c-initial" min="0" max="500000" step="1000">
+          </div>
+          <div class="field">
+            <label for="c-monthly">Aporte mensual</label>
+            <div class="input-wrap"><span class="prefix">$</span><input id="c-monthly" type="number" inputmode="decimal" min="0" step="50" value="833"></div>
+            <input type="range" data-for="c-monthly" min="0" max="20000" step="50">
+          </div>
+          <div class="field">
+            <label for="c-rate">Tasa de interés anual</label>
+            <div class="input-wrap"><input id="c-rate" type="number" inputmode="decimal" min="0" max="200" step="0.1" value="7"><span class="suffix">%</span></div>
+            <input type="range" data-for="c-rate" min="0" max="30" step="0.1">
+          </div>
+          <div class="field">
+            <label for="c-years">Plazo</label>
+            <div class="input-wrap"><input id="c-years" type="number" inputmode="numeric" min="1" max="100" step="1" value="30"><span class="suffix">años</span></div>
+            <input type="range" data-for="c-years" min="1" max="60" step="1">
+          </div>
+          <details class="advanced">
+            <summary>Opciones</summary>
+            <div class="field">
+              <label for="c-comp">Tipo de tasa</label>
+              <select id="c-comp">
+                <option value="nominal">Nominal anual, capitaliza mensual</option>
+                <option value="effective">Efectiva anual</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="c-scale">Escala de hitos</label>
+              <select id="c-scale">
+                <option value="auto">Automática</option>
+                <option value="0.1">×0,1 (10K · 25K · 50K · 100K)</option>
+                <option value="0.5">×0,5</option>
+                <option value="1">×1 (100K · 250K · 500K · 1M)</option>
+                <option value="2">×2</option>
+                <option value="3">×3</option>
+                <option value="5">×5</option>
+                <option value="10">×10</option>
+                <option value="20">×20</option>
+                <option value="50">×50</option>
+              </select>
+            </div>
+          </details>
+        </aside>
+
+        <div class="results">
+          <div class="stats">
+            <div class="stat primary"><span class="label">Capital final</span><span class="value" id="s-final">—</span></div>
+            <div class="stat"><span class="label">Total aportado</span><span class="value" id="s-contrib">—</span></div>
+            <div class="stat"><span class="label">Intereses ganados</span><span class="value" id="s-interest">—</span></div>
+            <div class="stat"><span class="label">Multiplicador</span><span class="value" id="s-mult">—</span></div>
+          </div>
+
+          <div class="card chart-card">
+            <div class="chart-head">
+              <div>
+                <h2 id="chart-title">Evolución del capital</h2>
+                <p class="muted" id="chart-sub"></p>
+              </div>
+              <div class="legend">
+                <span><i class="sw sw-capital"></i>Capital</span>
+                <span><i class="sw sw-contrib"></i>Aportado</span>
+              </div>
+            </div>
+            <div class="chart" id="chart-calc"></div>
+            <div class="timebar" id="timebar"></div>
+            <p class="timebar-caption muted">Tiempo total para cada tramo (en % del plazo)</p>
+          </div>
+
+          <div class="card">
+            <h2>Hitos</h2>
+            <div class="milestones" id="milestones"></div>
+          </div>
+
+          <div class="card">
+            <details>
+              <summary><h2 class="inline">Detalle año por año</h2></summary>
+              <div class="table-wrap">
+                <table class="table" id="year-table"></table>
+              </div>
+            </details>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= OBJETIVO ================= -->
+    <section id="tab-goal" class="panel" role="tabpanel" hidden>
+      <div class="layout">
+        <aside class="card inputs">
+          <h2>Mi objetivo</h2>
+          <div class="field">
+            <label for="g-target">Quiero llegar a</label>
+            <div class="input-wrap"><span class="prefix">$</span><input id="g-target" type="number" inputmode="decimal" min="1" step="10000" value="1000000"></div>
+            <div class="chips" data-chips="g-target">
+              <button data-v="100000">100K</button><button data-v="250000">250K</button><button data-v="500000">500K</button><button data-v="1000000">1M</button><button data-v="5000000">5M</button>
+            </div>
+          </div>
+          <div class="field">
+            <label for="g-years">En</label>
+            <div class="input-wrap"><input id="g-years" type="number" inputmode="numeric" min="1" max="100" step="1" value="20"><span class="suffix">años</span></div>
+            <input type="range" data-for="g-years" min="1" max="50" step="1">
+          </div>
+          <hr>
+          <p class="muted small">Datos de referencia para comparar:</p>
+          <div class="field">
+            <label for="g-initial">Capital inicial disponible</label>
+            <div class="input-wrap"><span class="prefix">$</span><input id="g-initial" type="number" inputmode="decimal" min="0" step="1000" value="50000"></div>
+            <input type="range" data-for="g-initial" min="0" max="500000" step="1000">
+          </div>
+          <div class="field">
+            <label for="g-monthly">Aporte mensual posible</label>
+            <div class="input-wrap"><span class="prefix">$</span><input id="g-monthly" type="number" inputmode="decimal" min="0" step="50" value="1000"></div>
+            <input type="range" data-for="g-monthly" min="0" max="20000" step="50">
+          </div>
+          <div class="field">
+            <label for="g-rate">Tasa esperada</label>
+            <div class="input-wrap"><input id="g-rate" type="number" inputmode="decimal" min="0" max="200" step="0.1" value="8"><span class="suffix">%</span></div>
+            <input type="range" data-for="g-rate" min="0" max="30" step="0.1">
+          </div>
+        </aside>
+
+        <div class="results">
+          <div class="scenarios">
+            <article class="card scenario s1">
+              <header><span class="dot"></span><h3>Sin capital inicial</h3></header>
+              <p class="muted small">Empiezo de $0 y solo aporto mes a mes.</p>
+              <div class="kv"><span>Aporte mensual necesario<br><small class="muted" id="g1-rate-lbl"></small></span><strong id="g1-pmt">—</strong></div>
+              <div class="kv"><span>Tasa necesaria<br><small class="muted" id="g1-pmt-lbl"></small></span><strong id="g1-rate">—</strong></div>
+            </article>
+            <article class="card scenario s2">
+              <header><span class="dot"></span><h3>Solo capital inicial</h3></header>
+              <p class="muted small">Invierto un monto y no aporto más.</p>
+              <div class="kv"><span>Tasa necesaria<br><small class="muted" id="g2-pv-lbl"></small></span><strong id="g2-rate">—</strong></div>
+              <div class="kv"><span>Capital necesario<br><small class="muted" id="g2-rate-lbl"></small></span><strong id="g2-pv">—</strong></div>
+            </article>
+            <article class="card scenario s3">
+              <header><span class="dot"></span><h3>Capital + aportes</h3></header>
+              <p class="muted small">Combino capital inicial y aportes mensuales.</p>
+              <div class="kv"><span>Tasa necesaria<br><small class="muted" id="g3-lbl"></small></span><strong id="g3-rate">—</strong></div>
+              <div class="kv"><span>Aporte necesario<br><small class="muted" id="g3-pmt-lbl"></small></span><strong id="g3-pmt">—</strong></div>
+            </article>
+          </div>
+
+          <div class="card chart-card">
+            <div class="chart-head">
+              <div>
+                <h2>Camino al objetivo</h2>
+                <p class="muted">Cada escenario con la tasa que necesita para llegar justo a tiempo.</p>
+              </div>
+              <div class="legend">
+                <span><i class="sw sw-s1"></i>Sin capital</span>
+                <span><i class="sw sw-s2"></i>Solo capital</span>
+                <span><i class="sw sw-s3"></i>Capital + aportes</span>
+              </div>
+            </div>
+            <div class="chart" id="chart-goal"></div>
+          </div>
+
+          <div class="card">
+            <h2>Aporte mensual necesario</h2>
+            <p class="muted small">Según tasa (filas) y capital inicial (columnas). Tocá una celda para usarla como referencia.</p>
+            <div class="table-wrap">
+              <table class="table heat" id="heatmap"></table>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>Tasa necesaria</h2>
+            <p class="muted small">Según aporte mensual (filas) y capital inicial (columnas).</p>
+            <div class="table-wrap">
+              <table class="table heat" id="heatmap-rate"></table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="tooltip" id="tooltip" hidden></div>
+
+  <footer class="foot muted small">Cálculos estimativos. Aportes al final de cada mes. No constituye asesoramiento financiero.</footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
